@@ -51,12 +51,4 @@
 		<None Remove=".editorconfig"></None>
 	</ItemGroup>
 
-	<Target Name="RemoveDirectories" BeforeTargets="PreBuildEvent">
-		<RemoveDir Directories="$(OutputDirectory);$(DebugDirectory);" />
-		<ItemGroup>
-			<OldProjectPackages Include="$(SolutionDir)\dist\nuget\$(PackageId)*.*" />
-		</ItemGroup>
-		<Delete Files="@(OldProjectPackages)"/>
-		<Message Text="Cleaned project and dist artifacts." Importance="high" />
-	</Target>
 </Project>
