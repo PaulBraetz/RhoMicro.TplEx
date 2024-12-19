@@ -32,7 +32,6 @@
 		<Copyright>2024</Copyright>
 		<Company>RhoMicro</Company>
 		<PackageId>$(MSBuildProjectName)</PackageId>
-		<PackageId Condition="'$(SolutionName)'!=''">$(SolutionName).$(MSBuildProjectName.Replace(" ", "_"))</PackageId>
 		<RepositoryUrl>https://github.com/PaulBraetz/$(SolutionName)</RepositoryUrl>
 	</PropertyGroup>
 
