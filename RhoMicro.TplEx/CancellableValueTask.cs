@@ -1,4 +1,4 @@
-﻿namespace RhoMicro.CancellableTasks;
+﻿namespace RhoMicro.TplEx;
 
 using System;
 using System.Runtime.CompilerServices;

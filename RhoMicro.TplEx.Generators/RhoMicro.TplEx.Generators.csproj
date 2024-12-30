@@ -14,13 +14,7 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<Description>Provides tasks that maybe cancelled after being started.</Description>
-		<PackageTags>Source Generator</PackageTags>
-	</PropertyGroup>
-
-	<PropertyGroup>
-		<DefineConstants>$(DefineConstants);GENERATOR;RHOMICRO_CANCELLABLETASK_GENERATOR</DefineConstants>
+		<DefineConstants>$(DefineConstants);GENERATOR;RHOMICRO_TPLEX_GENERATORS</DefineConstants>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -30,20 +24,14 @@
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="RhoMicro.CodeAnalysis.UtilityGenerators" Version="16.0.4">
+		<PackageReference Include="RhoMicro.CodeAnalysis.UtilityGenerators" Version="16.1.2">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="RhoMicro.CodeAnalysis.UnionsGenerator" Version="*">
+		<PackageReference Include="RhoMicro.CodeAnalysis.UnionsGenerator" Version="16.1.2">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-	</ItemGroup>
-
-	<ItemGroup>
-		<None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-		<None Include="README.md" Pack="true" PackagePath="/" CopyToOutputDirectory="Always" />
-		<None Include="LICENSE.txt" Pack="true" PackagePath="/" CopyToOutputDirectory="Always" />
 	</ItemGroup>
 
 </Project>

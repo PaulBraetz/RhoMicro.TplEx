@@ -1,6 +1,6 @@
 ﻿#pragma warning disable IDE0007 // Use implicit type
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-namespace RhoMicro.CancellableTasks.Tests;
+namespace RhoMicro.TplEx.Tests;
 public class CancellableTaskTests
 {
     [Fact]

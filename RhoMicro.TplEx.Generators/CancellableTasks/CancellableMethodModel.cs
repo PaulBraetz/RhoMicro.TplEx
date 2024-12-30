@@ -1,14 +1,15 @@
-﻿namespace RhoMicro.CancellableTasks;
+﻿namespace RhoMicro.TplEx.CancellableTasks;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
+using RhoMicro.CodeAnalysis;
 using RhoMicro.CodeAnalysis.Library.Models;
 using RhoMicro.CodeAnalysis.Library.Models.Collections;
 
 //TODO: copy type param constraints
-internal sealed record CancellableMethodModel(
-    TypeSignatureModel ContainingType,
+internal sealed partial record CancellableMethodModel(
+    NamedTypeModel ContainingType,
     String Accessibility,
     Boolean IsStatic,
     String MethodName,
@@ -26,36 +27,15 @@ internal sealed record CancellableMethodModel(
             {
                 ExplicitInterfaceImplementations: [],
                 Parameters.Length: > 0,
-                ReturnType: INamedTypeSymbol
-                {
-                    Name: "ValueTask" or "Task",
-                    TypeParameters: [] or [{ }],
-                    ContainingNamespace:
-                    {
-                        Name: "Tasks",
-                        ContainingNamespace:
-                        {
-                            Name: "Threading",
-                            ContainingNamespace:
-                            {
-                                Name: "System",
-                                ContainingNamespace:
-                                {
-                                    IsGlobalNamespace: true
-                                }
-                            }
-                        }
-                    }
-                },
+                ReturnType: INamedTypeSymbol returnType,
                 ContainingType: var containingType
-            } target)
+            } target || !IsValueTask(returnType) && !IsTask(returnType))
         {
             return null;
         }
 
-        var mutabilityContext = new MutabilityContext();
-        var parameters = ctx.CollectionFactory.CreateList<ParameterModel>(mutabilityContext);
-        var methodTypeParameters = ctx.CollectionFactory.CreateList<String>(mutabilityContext);
+        var parameters = ctx.CollectionFactory.CreateList<ParameterModel>();
+        var methodTypeParameters = ctx.CollectionFactory.CreateList<String>();
 
         var ctParamIndex = -1;
 
@@ -65,28 +45,8 @@ internal sealed record CancellableMethodModel(
 
             var parameter = target.Parameters[i];
 
-            if(parameter is
-                {
-                    Type:
-                    {
-                        Name: "CancellationToken",
-                        ContainingNamespace:
-                        {
-                            Name: "Threading",
-                            ContainingNamespace:
-                            {
-                                Name: "System",
-                                ContainingNamespace:
-                                {
-                                    IsGlobalNamespace: true
-                                }
-                            }
-                        }
-                    }
-                })
-            {
+            if(IsCancellationToken(parameter.Type))
                 ctParamIndex = i;
-            }
 
             parameters.Add(ParameterModel.Create(parameter, in ctx));
         }
@@ -107,16 +67,14 @@ internal sealed record CancellableMethodModel(
         var typeArgumentName = target.ReturnType is INamedTypeSymbol { TypeArguments: [{ } arg] }
             ? arg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
             : null;
-        var containingTypeModel = TypeSignatureModel.Create(containingType, in ctx);
+        var containingTypeModel = NamedTypeModel.Create(containingType, in ctx);
         var accessibility = SyntaxFacts.GetText(target.DeclaredAccessibility);
         var isStatic = target.IsStatic;
         var methodName = target.Name;
         var returnTypeArgString = target.ReturnType is INamedTypeSymbol { TypeArguments: [{ } returnTypeTypeArg] }
             ? $"<{returnTypeTypeArg.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)}>"
             : String.Empty;
-        var cancellableReturnType = $"global::RhoMicro.CancellableTasks.Cancellable{target.ReturnType.Name}{returnTypeArgString}";
-
-        mutabilityContext.SetImmutable();
+        var cancellableReturnType = $"global::RhoMicro.TplEx.Cancellable{target.ReturnType.Name}{returnTypeArgString}";
 
         var result = new CancellableMethodModel(
             containingTypeModel,

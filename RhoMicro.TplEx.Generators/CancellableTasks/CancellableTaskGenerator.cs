@@ -1,4 +1,4 @@
-namespace RhoMicro.CancellableTasks;
+namespace RhoMicro.TplEx.CancellableTasks;
 
 using System.Linq.Expressions;
 
@@ -9,37 +9,30 @@ using RhoMicro.CodeAnalysis.Generated;
 using RhoMicro.CodeAnalysis.Library;
 using RhoMicro.CodeAnalysis.Library.Text;
 using RhoMicro.CodeAnalysis.Library.Models.Collections;
-using RhoMicro.CancellableTasks;
+using RhoMicro.TplEx;
 using System.Diagnostics.Contracts;
 using Microsoft.CodeAnalysis.CSharp;
+using RhoMicro.CodeAnalysis.Library.Models;
 
 /// <summary>
 /// Generates method overloads for cancellable task producing methods.
 /// </summary>
 [Generator(LanguageNames.CSharp)]
-public sealed class CancellableTasksGenerator : IIncrementalGenerator
+public sealed class CancellableTaskGenerator : IIncrementalGenerator
 {
-    private static readonly EquatableCollectionFactory _collectionFactory = EquatableCollectionFactory.Default;
-
     /// <inheritdoc/>
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
+        //TODO: refactor to fawmn
         var provider = context.SyntaxProvider.CreateSyntaxProvider(
-            static (n, ct) =>
+            static (n, ct) => n is MethodDeclarationSyntax
             {
-                ct.ThrowIfCancellationRequested();
-
-                var result = n is MethodDeclarationSyntax
+                ReturnType.RawKind: not (Int32)SyntaxKind.VoidKeyword,
+                Parent: ClassDeclarationSyntax
                 {
-                    ReturnType.RawKind: not (Int32)SyntaxKind.VoidKeyword,
-                    Parent: ClassDeclarationSyntax
-                    {
-                        Modifiers: [.., { RawKind: (Int32)SyntaxKind.PartialKeyword }],
-                        Keyword.RawKind: (Int32)SyntaxKind.ClassKeyword or (Int32)SyntaxKind.StructKeyword or (Int32)SyntaxKind.RecordKeyword
-                    }
-                };
-
-                return result;
+                    Modifiers: [.., { RawKind: (Int32)SyntaxKind.PartialKeyword }],
+                    Keyword.RawKind: (Int32)SyntaxKind.ClassKeyword or (Int32)SyntaxKind.StructKeyword or (Int32)SyntaxKind.RecordKeyword
+                }
             },
             static (ctx, ct) =>
             {
@@ -48,7 +41,8 @@ public sealed class CancellableTasksGenerator : IIncrementalGenerator
                 if(ctx.SemanticModel.GetDeclaredSymbol(ctx.Node, ct) is not { } targetSymbol)
                     return null;
 
-                var result = CancellableMethodModel.Create(targetSymbol, new(_collectionFactory, ct));
+                using var modelCtx = ModelCreationContext.CreateDefault(ct);
+                var result = CancellableMethodModel.Create(targetSymbol, in modelCtx);
 
                 return result;
             }).Collect()
@@ -56,10 +50,9 @@ public sealed class CancellableTasksGenerator : IIncrementalGenerator
             {
                 ct.ThrowIfCancellationRequested();
 
-                var mutabilityContext = new MutabilityContext();
-
+                using var modelCtx = ModelCreationContext.CreateDefault(ct);
                 var map = new Dictionary<String, EquatableList<CancellableMethodModel>>();
-                var result = _collectionFactory.CreateList<EquatableList<CancellableMethodModel>>(mutabilityContext);
+                var result = modelCtx.CollectionFactory.CreateList<EquatableList<CancellableMethodModel>>();
 
                 foreach(var methodModel in m)
                 {
@@ -71,14 +64,12 @@ public sealed class CancellableTasksGenerator : IIncrementalGenerator
                     var containingType = methodModel.ContainingType.GetDisplayString(ct);
                     if(!map.TryGetValue(containingType, out var methodsForType))
                     {
-                        map[containingType] = methodsForType = _collectionFactory.CreateList<CancellableMethodModel>(mutabilityContext);
+                        map[containingType] = methodsForType = modelCtx.CollectionFactory.CreateList<CancellableMethodModel>();
                         result.Add(methodsForType);
                     }
 
                     methodsForType.Add(methodModel);
                 }
-
-                mutabilityContext.SetImmutable();
 
                 return result;
             })
@@ -88,7 +79,7 @@ public sealed class CancellableTasksGenerator : IIncrementalGenerator
 
                 var sourceBuilder = new IndentedStringBuilder(IndentedStringBuilderOptions.GeneratedFile with
                 {
-                    GeneratorName = typeof(CancellableTasksGenerator).FullName,
+                    GeneratorName = typeof(CancellableTaskGenerator).FullName,
                     AmbientCancellationToken = ct
                 });
 
